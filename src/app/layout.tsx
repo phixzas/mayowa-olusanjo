@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Mayowa Olusanjo | Data Analyst & Data Scientist",
+  title: "Mayowa Philips Olusanjo | Data Scientist & Data Analyst",
   description:
-    "Mayowa Olusanjo turns complex questions into thoughtful analysis, useful dashboards, and confident decisions.",
+    "Mayowa Philips Olusanjo analyzes data and builds practical machine-learning models that help businesses make better decisions.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

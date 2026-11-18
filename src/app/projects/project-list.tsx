@@ -1,0 +1,139 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { createSupabaseBrowserClient } from "../supabase";
+import type { Project } from "./types";
+
+const projectFields =
+  "id, title, description, project_type, tools, dashboard_path, github_url, live_url, is_published, display_order";
+
+export default function ProjectList({ limit }: { limit?: number }) {
+  const [supabase] = useState(() => createSupabaseBrowserClient());
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    if (!supabase) {
+      return;
+    }
+    const client = supabase;
+
+    async function loadProjects() {
+      let query = client
+        .from("projects")
+        .select(projectFields)
+        .eq("is_published", true)
+        .order("display_order", { ascending: true })
+        .order("created_at", { ascending: false });
+
+      if (limit) {
+        query = query.limit(limit);
+      }
+
+      const { data, error: queryError } = await query;
+      if (!active) {
+        return;
+      }
+
+      if (queryError) {
+        setError(`Could not load projects: ${queryError.message}`);
+      } else {
+        setProjects(data as Project[]);
+      }
+      setLoading(false);
+    }
+
+    void loadProjects();
+    return () => {
+      active = false;
+    };
+  }, [limit, supabase]);
+
+  if (!supabase) {
+    return (
+      <p className="experience-state">
+        Projects will appear here after the portfolio database is configured.
+      </p>
+    );
+  }
+
+  if (loading) {
+    return <p className="experience-state">Loading projects…</p>;
+  }
+
+  if (error) {
+    return <p className="experience-state experience-state--error">{error}</p>;
+  }
+
+  if (projects.length === 0) {
+    return (
+      <p className="experience-state">
+        Projects are being added. Check back soon.
+      </p>
+    );
+  }
+
+  return (
+    <div className="managed-project-grid">
+      {projects.map((project) => {
+        const { data: dashboard } = project.dashboard_path
+          ? supabase.storage
+              .from("project-dashboards")
+              .getPublicUrl(project.dashboard_path)
+          : { data: { publicUrl: null } };
+
+        return (
+          <article className="managed-project-card" key={project.id}>
+            {dashboard.publicUrl ? (
+              <div className="project-dashboard-frame">
+                <iframe
+                  src={`${dashboard.publicUrl}#toolbar=0&navpanes=0`}
+                  title={`${project.title} dashboard`}
+                  loading="lazy"
+                />
+              </div>
+            ) : (
+              <div className={`managed-project-art managed-project-art--${project.project_type}`}>
+                <span>{project.project_type === "data_analysis" ? "DATA ANALYSIS" : "DATA SCIENCE"}</span>
+                <strong>{project.title}</strong>
+                <span className="managed-project-art-mark" aria-hidden="true">M<span>.</span></span>
+              </div>
+            )}
+            <div className="managed-project-content">
+              <div className="project-meta">
+                <span>{project.project_type === "data_analysis" ? "DATA ANALYSIS" : "DATA SCIENCE"}</span>
+                {project.dashboard_path && <span>PDF DASHBOARD</span>}
+              </div>
+              <h2>{project.title}</h2>
+              <p>{project.description}</p>
+              {project.tools.length > 0 && (
+                <div className="tool-list">
+                  {project.tools.map((tool) => <span key={tool}>{tool}</span>)}
+                </div>
+              )}
+              <div className="managed-project-links">
+                {project.dashboard_path && dashboard.publicUrl && (
+                  <a href={dashboard.publicUrl} target="_blank" rel="noreferrer">
+                    View dashboard PDF <span aria-hidden="true">↗</span>
+                  </a>
+                )}
+                {project.github_url && (
+                  <a href={project.github_url} target="_blank" rel="noreferrer">
+                    View code on GitHub <span aria-hidden="true">↗</span>
+                  </a>
+                )}
+                {project.live_url && (
+                  <a href={project.live_url} target="_blank" rel="noreferrer">
+                    Open live app <span aria-hidden="true">↗</span>
+                  </a>
+                )}
+              </div>
+            </div>
+          </article>
+        );
+      })}
+    </div>
+  );
+}

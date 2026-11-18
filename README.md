@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Mayowa Philips Olusanjo — Portfolio
 
-## Getting Started
+A responsive Next.js portfolio focused on Mayowa Philips Olusanjo's data-analysis and data-science work, predictive models, live apps, and machine-learning approach.
 
-First, run the development server:
+The homepage includes short About and Experience previews. Visit `/about` for the full biography and `/experience` for the career timeline.
+Projects are managed at `/admin/projects` and displayed at `/projects`. Project dashboard uploads are PDF documents (not image files); cards can also link to GitHub code and live apps or dashboards.
+Skills are displayed at `/skills` and managed by category at `/admin/skills`; each category can contain as many tools as needed.
+Contact links are displayed at `/contact` and configured in `src/app/contact/page.tsx`.
+
+## Run locally
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Personalize the portfolio
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Update project descriptions, tools, and modeling details in `src/app/portfolio-data.ts`.
+- Upload or replace your profile photo at `/admin/profile`; it appears on the homepage and About page.
+- Upload or replace your CV at `/admin/cv`; the header's download button serves the uploaded PDF.
+- Add your Streamlit app URL to the relevant project and contact links.
 
-## Learn More
+## Experience admin setup
 
-To learn more about Next.js, take a look at the following resources:
+Experience entries are stored in Supabase and can be managed at `/admin/experience`.
+The admin form supports role title, organization, description, start/end dates,
+current-role status, display order, and draft/published visibility. The public
+experience page calculates the duration for each role from its dates.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Create a Supabase project and run these migrations in order in the Supabase SQL Editor:
+   - `supabase/migrations/202611180001_experiences.sql`
+   - `supabase/migrations/202611180002_projects.sql`
+   - `supabase/migrations/202611180003_skill_categories.sql`
+   - `supabase/migrations/202611180004_profile_photos.sql`
+   - `supabase/migrations/202611180005_cv_documents.sql`
+2. Copy `.env.example` to `.env.local` and set `NEXT_PUBLIC_SUPABASE_URL` and
+   `NEXT_PUBLIC_SUPABASE_ANON_KEY` using your project URL and public anon/publishable key.
+   Never put a Supabase service-role key in the Next.js app.
+3. In Supabase Authentication, create an admin user with email and password.
+   Copy that user's ID from the Users page and add it in the SQL Editor:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+   ```sql
+   insert into public.experience_admins (user_id)
+   values ('YOUR-AUTH-USER-UUID');
+   ```
 
-## Deploy on Vercel
+4. Restart the dev server, then sign in at `/admin/experience`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Row-level security limits edits to user IDs explicitly added to
+`experience_admins`; visitors can only read published entries.
+The same admin account can manage projects at `/admin/projects`. Project dashboard
+files must be PDFs no larger than 50 MB. Uploads are stored in the public
+`project-dashboards` bucket so visitors can view them; only authorized admins can
+upload or remove files. Add GitHub and live app/dashboard URLs in each project
+entry to link the source code and interactive version.
+The same admin account can manage skill categories at `/admin/skills`. Enter one
+tool per line; published categories appear on both the homepage and About page.
+The same admin account can upload or replace the profile photo at `/admin/profile`.
+Profile photos are stored in the public `profile-photos` bucket; only authorized
+admins can upload or replace the image. CV PDFs are managed separately at
+`/admin/cv` and stored in the public `cv-documents` bucket; clicking the header's
+download button downloads the uploaded file.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Validate and build
+
+```bash
+npm run lint
+npm run build
+```

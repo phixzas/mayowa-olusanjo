@@ -1,122 +1,42 @@
-const projects = [
-  {
-    number: "01",
-    category: "BUSINESS INTELLIGENCE",
-    title: "Sales performance dashboard",
-    description:
-      "A clear view of revenue, orders, and product trends to help teams make faster decisions.",
-    tools: ["Power BI", "SQL", "DAX"],
-    visual: "sales",
-  },
-  {
-    number: "02",
-    category: "DATA SCIENCE",
-    title: "Customer churn analysis",
-    description:
-      "Exploring customer behavior and surfacing the signals that can help reduce churn.",
-    tools: ["Python", "Pandas", "Scikit-learn"],
-    visual: "churn",
-  },
-  {
-    number: "03",
-    category: "ANALYTICS",
-    title: "Product insights report",
-    description:
-      "An interactive exploration of user engagement, retention, and product growth.",
-    tools: ["Python", "SQL", "Tableau"],
-    visual: "product",
-  },
-];
-
-function DashboardPreview({ type }: { type: string }) {
-  return (
-    <div className={`project-visual project-visual--${type}`} aria-hidden="true">
-      <div className="visual-topbar">
-        <span />
-        <span />
-        <span />
-        <div />
-      </div>
-      <div className="visual-content">
-        <div className="visual-heading">
-          <span />
-          <span />
-        </div>
-        <div className="visual-metrics">
-          <span />
-          <span />
-          <span />
-        </div>
-        <div className="visual-chart">
-          <div className="chart-y-axis">
-            <i />
-            <i />
-            <i />
-            <i />
-          </div>
-          <svg viewBox="0 0 320 100" preserveAspectRatio="none">
-            <path className="chart-area" d="M0 80 C28 72 37 83 63 58 S101 66 128 43 S166 54 192 30 S234 43 258 18 S291 27 320 4 V100 H0Z" />
-            <path className="chart-line" d="M0 80 C28 72 37 83 63 58 S101 66 128 43 S166 54 192 30 S234 43 258 18 S291 27 320 4" />
-          </svg>
-        </div>
-        <div className="visual-footer">
-          <span />
-          <span />
-          <span />
-          <span />
-          <span />
-          <span />
-          <span />
-        </div>
-      </div>
-    </div>
-  );
-}
+import Link from "next/link";
+import SiteHeader from "./site-header";
+import ProfilePhoto from "./profile-photo";
+import ProjectList from "./projects/project-list";
+import SkillsList from "./skills/skills-list";
 
 export default function Home() {
   return (
     <main>
-      <header className="site-header">
-        <a className="wordmark" href="#home" aria-label="Mayowa Olusanjo, home">
-          mo<span>.</span>
-        </a>
-        <nav className="main-nav" aria-label="Main navigation">
-          <a href="#work">Work</a>
-          <a href="#about">About</a>
-          <a href="#contact">Contact</a>
-        </nav>
-        <a className="header-link" href="#contact">
-          Let&apos;s talk <span aria-hidden="true">↗</span>
-        </a>
-      </header>
+      <SiteHeader />
 
       <section className="hero section-wrap" id="home">
         <div className="hero-copy">
           <div className="availability">
             <span />
-            DATA ANALYST &amp; DATA SCIENTIST
+            DATA SCIENTIST · DATA ANALYST · MACHINE LEARNING &amp; PREDICTIVE MODELING
           </div>
           <h1>
-            Making data
+            Hi, I&apos;m Mayowa
             <br />
-            <span>make sense.</span>
+            <span>Philips Olusanjo.</span>
           </h1>
           <p className="hero-description">
-            I&apos;m Mayowa Olusanjo, a data professional turning complex
-            questions into thoughtful analysis, useful dashboards, and
-            confident decisions.
+            I analyze messy data to uncover useful insights, then build
+            predictive models businesses can actually use. From loan approval
+            to sports analytics, I build and deploy practical machine-learning
+            solutions.
           </p>
           <div className="hero-actions">
-            <a className="button button-dark" href="#work">
-              Explore my work <span aria-hidden="true">↓</span>
+            <a className="button button-dark" href="#projects">
+              View my projects <span aria-hidden="true">↓</span>
             </a>
-            <a className="text-link" href="#about">
-              More about me <span aria-hidden="true">↗</span>
-            </a>
+            <Link className="text-link" href="/contact">
+              Contact me <span aria-hidden="true">↗</span>
+            </Link>
           </div>
           <div className="hero-note">
-            <span>BASED IN</span>
-            <strong>Building insights, wherever you are</strong>
+            <span>FROM NOTEBOOK TO LIVE APP</span>
+            <strong>I build models people can use</strong>
           </div>
         </div>
 
@@ -146,105 +66,109 @@ export default function Home() {
 
       <section className="stats-strip section-wrap" aria-label="At a glance">
         <div className="stat">
-          <strong>3<span>+</span></strong>
-          <span>Years of professional experience</span>
+          <strong>End to end</strong>
+          <span>From raw data to deployed models</span>
         </div>
         <div className="stat">
-          <strong>—</strong>
-          <span>Live App Store apps · add your count</span>
+          <strong>Model choice</strong>
+          <span>Compare, tune, and evaluate</span>
         </div>
         <div className="stat stat-note">
-          <strong>—</strong>
-          <span>GitHub stars · add your count</span>
+          <strong>Built to use</strong>
+          <span>Practical predictions, not just notebooks</span>
         </div>
       </section>
 
-      <section className="work-section section-wrap" id="work">
-        <div className="section-heading">
-          <div>
-            <span className="eyebrow">SELECTED WORK · 2022—2025</span>
-            <h2>Ideas, explored<br />through data.</h2>
-          </div>
-          <p>
-            A selection of dashboards and data projects. Each one starts with
-            a question and ends with a clearer picture.
-          </p>
-        </div>
-
-        <div className="project-grid">
-          {projects.map((project) => (
-            <article className="project-card" key={project.number}>
-              <DashboardPreview type={project.visual} />
-              <div className="project-details">
-                <div className="project-meta">
-                  <span>{project.category}</span>
-                  <span>{project.number}</span>
-                </div>
-                <h3>{project.title}</h3>
-                <p>{project.description}</p>
-                <div className="tool-list">
-                  {project.tools.map((tool) => <span key={tool}>{tool}</span>)}
-                </div>
-              </div>
-            </article>
-          ))}
-        </div>
-        <p className="projects-note">
-          Project previews are sample layouts—replace them with your live dashboards and case studies.
-        </p>
-      </section>
-
-      <section className="about-section" id="about">
+      <section className="about-section about-preview" id="about">
         <div className="about-inner section-wrap">
           <div className="about-label">
-            <span className="eyebrow">A LITTLE ABOUT ME</span>
-            <div className="portrait-placeholder" aria-label="Photo placeholder">
-              <span>MO</span>
-              <small>YOUR PHOTO</small>
-            </div>
+            <span className="eyebrow">DATA SCIENTIST · DATA ANALYST · PREDICTIVE MODELING</span>
+            <ProfilePhoto className="portrait-placeholder" />
           </div>
           <div className="about-copy">
-            <h2>Good data work is<br />equal parts <em>rigor</em><br />and curiosity.</h2>
+            <h2>I turn messy data<br />into models with<br /><em>real-world value.</em></h2>
             <p>
-              For the past three years, I&apos;ve been working with data to
-              answer real-world questions. I enjoy the full process: getting
-              the data into shape, finding the story inside it, and presenting
-              the result in a way people can actually use.
+              I build end-to-end machine-learning projects, from data preparation
+              and model evaluation to deployment as usable apps.
             </p>
-            <p>
-              My toolkit spans analysis, visualization, and machine learning.
-              I&apos;m always learning, asking better questions, and looking
-              for the signal in the noise.
+            <Link className="text-link" href="/about">
+              Read more about me <span aria-hidden="true">↗</span>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="experience-section section-wrap" id="experience">
+        <div className="section-heading">
+          <div>
+            <span className="eyebrow">EXPERIENCE</span>
+            <h2>My professional<br />experience.</h2>
+          </div>
+          <p>
+            Explore my roles, responsibilities, and the time spent in each
+            experience.
+          </p>
+        </div>
+        <Link className="experience-preview-link" href="/experience">
+          <span>View experience and role durations</span>
+          <span aria-hidden="true">↗</span>
+        </Link>
+      </section>
+
+      <section className="work-section section-wrap" id="projects">
+        <div className="section-heading">
+          <div>
+            <span className="eyebrow">SELECTED MACHINE-LEARNING PROJECTS</span>
+            <h2>Models built<br />to be useful.</h2>
+          </div>
+          <p>
+            Browse data-analysis dashboards, machine-learning projects, source
+            code, and live applications.
+          </p>
+        </div>
+        <ProjectList limit={4} />
+        <div className="projects-all-link">
+          <Link className="button button-dark" href="/projects">
+            Explore all projects <span aria-hidden="true">↗</span>
+          </Link>
+        </div>
+      </section>
+
+      <section className="skills-section" id="skills">
+        <div className="skills-inner section-wrap">
+          <div>
+            <span className="eyebrow">SKILLS &amp; TOOLKIT</span>
+            <h2>Tools for<br />the whole journey.</h2>
+            <p className="skills-preview-copy">
+              Explore the tools I use for analysis, machine learning, and deployment.
             </p>
-            <a className="text-link" href="#contact">
-              Get to know me <span aria-hidden="true">↗</span>
-            </a>
           </div>
-          <div className="about-skills">
-            <span className="eyebrow">WHAT I WORK WITH</span>
-            <div><span>01</span> Data analysis</div>
-            <div><span>02</span> Dashboards &amp; BI</div>
-            <div><span>03</span> Python &amp; SQL</div>
-            <div><span>04</span> Machine learning</div>
-            <div><span>05</span> Data storytelling</div>
-          </div>
+          <SkillsList limit={4} />
+        </div>
+        <div className="skills-all-link section-wrap">
+          <Link className="text-link" href="/skills">
+            View all skills <span aria-hidden="true">↗</span>
+          </Link>
         </div>
       </section>
 
       <section className="contact-section section-wrap" id="contact">
         <span className="eyebrow">HAVE A QUESTION OR A PROJECT?</span>
         <h2>Let&apos;s make<br /><span>something clear.</span></h2>
-        <p>I&apos;m open to data roles and interesting collaborations.</p>
-        <a className="button button-light" href="mailto:your-email@example.com">
-          Get in touch <span aria-hidden="true">↗</span>
-        </a>
+        <p>
+          I&apos;m open to freelance opportunities,
+          internships, and full-time roles.
+        </p>
+        <Link className="button button-light" href="/contact">
+          Contact me <span aria-hidden="true">↗</span>
+        </Link>
         <span className="contact-orbit contact-orbit-one" />
         <span className="contact-orbit contact-orbit-two" />
       </section>
 
       <footer className="site-footer section-wrap">
         <a className="wordmark" href="#home">mo<span>.</span></a>
-        <span>© {new Date().getFullYear()} Mayowa Olusanjo</span>
+        <span>© 2026 Mayowa Philips Olusanjo</span>
         <a href="#home">Back to top ↑</a>
       </footer>
     </main>
