@@ -514,6 +514,17 @@ a {
   background: #e8ece5;
 }
 
+.project-cover-frame {
+  position: relative;
+  height: 280px;
+  overflow: hidden;
+  background: #e8ece5;
+}
+
+.project-cover-image {
+  object-fit: cover;
+}
+
 .project-dashboard-frame iframe {
   display: block;
   width: 100%;
@@ -687,6 +698,13 @@ a {
   margin: -8px 0 0;
   color: var(--muted);
   font-size: 10px;
+}
+
+.admin-upload-note {
+  margin: -8px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
 }
 
 .admin-file-name button {

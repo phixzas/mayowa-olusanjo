@@ -3,7 +3,7 @@
 A responsive Next.js portfolio focused on Mayowa Philips Olusanjo's data-analysis and data-science work, predictive models, live apps, and machine-learning approach.
 
 The homepage includes short About and Experience previews. Visit `/about` for the full biography and `/experience` for the career timeline.
-Projects are managed at `/admin/projects` and displayed at `/projects`. Project dashboard uploads are PDF documents (not image files); cards can also link to GitHub code and live apps or dashboards.
+Projects are managed at `/admin/projects` and displayed at `/projects`. Each project can include a cover image, a dashboard PDF, downloadable files, and links to GitHub or a live app.
 Skills are displayed at `/skills` and managed by category at `/admin/skills`; each category can contain as many tools as needed.
 Contact links are displayed at `/contact` and configured in `src/app/contact/page.tsx`.
 
@@ -48,6 +48,7 @@ experience page calculates the duration for each role from its dates.
    - `supabase/migrations/202611180003_skill_categories.sql`
    - `supabase/migrations/202611180004_profile_photos.sql`
    - `supabase/migrations/202611180005_cv_documents.sql`
+   - `supabase/migrations/202611180006_project_uploads.sql`
 2. Copy `.env.example` to `.env.local` and set `NEXT_PUBLIC_SUPABASE_URL` and
    `NEXT_PUBLIC_SUPABASE_ANON_KEY` using your project URL and public anon/publishable key.
    Never put a Supabase service-role key in the Next.js app.
@@ -63,11 +64,15 @@ experience page calculates the duration for each role from its dates.
 
 Row-level security limits edits to user IDs explicitly added to
 `experience_admins`; visitors can only read published entries.
-The same admin account can manage projects at `/admin/projects`. Project dashboard
-files must be PDFs no larger than 50 MB. Uploads are stored in the public
-`project-dashboards` bucket so visitors can view them; only authorized admins can
-upload or remove files. Add GitHub and live app/dashboard URLs in each project
-entry to link the source code and interactive version.
+The same admin account can manage projects at `/admin/projects`. Project cover
+images support JPG, PNG, and WebP. Downloadable project files support ZIP,
+common code and notebook formats, CSV/Excel, PDF, and common text documents.
+Uploads are limited to 150 MB per file and are public on published projects;
+only authorized admins can upload or remove them. Supabase Free has a 50 MB
+global file-size limit, so 150 MB uploads require a plan that supports that
+limit and a matching **Storage → Global file size limit** setting. The project
+dashboard PDF remains separately viewable on the project card. Add GitHub and
+live app/dashboard URLs for source repositories and interactive demos.
 The same admin account can manage skill categories at `/admin/skills`. Enter one
 tool per line; published categories appear on both the homepage and About page.
 The same admin account can upload or replace the profile photo at `/admin/profile`.

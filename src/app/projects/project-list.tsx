@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { createSupabaseBrowserClient } from "../supabase";
 import type { Project } from "./types";
 
 const projectFields =
-  "id, title, description, project_type, tools, dashboard_path, github_url, live_url, is_published, display_order";
+  "id, title, description, project_type, tools, dashboard_path, cover_image_path, github_url, live_url, is_published, display_order, project_assets(id, storage_path, file_name, content_type, display_order)";
 
 export default function ProjectList({ limit }: { limit?: number }) {
   const [supabase] = useState(() => createSupabaseBrowserClient());
@@ -83,10 +84,26 @@ export default function ProjectList({ limit }: { limit?: number }) {
               .from("project-dashboards")
               .getPublicUrl(project.dashboard_path)
           : { data: { publicUrl: null } };
+        const { data: coverImage } = project.cover_image_path
+          ? supabase.storage
+              .from("project-assets")
+              .getPublicUrl(project.cover_image_path)
+          : { data: { publicUrl: null } };
 
         return (
           <article className="managed-project-card" key={project.id}>
-            {dashboard.publicUrl ? (
+            {coverImage.publicUrl ? (
+              <div className="project-cover-frame">
+                <Image
+                  className="project-cover-image"
+                  src={coverImage.publicUrl}
+                  alt={`${project.title} project cover`}
+                  fill
+                  sizes="(max-width: 700px) 100vw, 50vw"
+                  unoptimized
+                />
+              </div>
+            ) : dashboard.publicUrl ? (
               <div className="project-dashboard-frame">
                 <iframe
                   src={`${dashboard.publicUrl}#toolbar=0&navpanes=0`}
@@ -105,6 +122,7 @@ export default function ProjectList({ limit }: { limit?: number }) {
               <div className="project-meta">
                 <span>{project.project_type === "data_analysis" ? "DATA ANALYSIS" : "DATA SCIENCE"}</span>
                 {project.dashboard_path && <span>PDF DASHBOARD</span>}
+                {project.project_assets?.length > 0 && <span>PROJECT FILES</span>}
               </div>
               <h2>{project.title}</h2>
               <p>{project.description}</p>
@@ -119,6 +137,19 @@ export default function ProjectList({ limit }: { limit?: number }) {
                     View dashboard PDF <span aria-hidden="true">↗</span>
                   </a>
                 )}
+                {project.project_assets?.map((asset) => {
+                  const { data: file } = supabase.storage
+                    .from("project-assets")
+                    .getPublicUrl(asset.storage_path);
+                  return (
+                    <a
+                      key={asset.id}
+                      href={`${file.publicUrl}?download=${encodeURIComponent(asset.file_name)}`}
+                    >
+                      Download {asset.file_name} <span aria-hidden="true">↓</span>
+                    </a>
+                  );
+                })}
                 {project.github_url && (
                   <a href={project.github_url} target="_blank" rel="noreferrer">
                     View code on GitHub <span aria-hidden="true">↗</span>

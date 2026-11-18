@@ -23,8 +23,8 @@ export default function ProjectsPage() {
             <h1>Projects built<br />to be explored.</h1>
           </div>
           <p>
-            Explore dashboard PDFs, source code, and live apps. Dashboard
-            reports are uploaded as documents, not screenshots.
+            Explore project images, dashboard PDFs, downloadable source and data
+            files, and live apps.
           </p>
         </div>
         <ProjectList />

@@ -16,7 +16,7 @@ export default function ProjectAdminPage() {
         <span className="eyebrow">PORTFOLIO ADMIN</span>
         <h1>Manage projects.</h1>
         <p className="admin-intro">
-          Upload PDF dashboards, add GitHub code and live app links, then publish projects to your portfolio.
+          Add cover images, upload project files, and link GitHub code or live apps before publishing.
         </p>
         <nav className="admin-section-nav" aria-label="Admin sections">
           <Link href="/admin/experience">Experience</Link>

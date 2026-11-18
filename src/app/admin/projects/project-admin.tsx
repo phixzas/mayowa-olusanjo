@@ -4,10 +4,20 @@ import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseBrowserClient } from "../../supabase";
-import type { Project, ProjectType } from "../../projects/types";
+import type { Project, ProjectAsset, ProjectType } from "../../projects/types";
+import {
+  getProjectFileContentType,
+  getProjectImageContentType,
+  getProjectStoragePath,
+  hasValidProjectImageSignature,
+  MAX_PROJECT_UPLOAD_BYTES,
+  PROJECT_FILE_ACCEPT,
+  PROJECT_IMAGE_ACCEPT,
+  uploadProjectObject,
+} from "./project-uploads";
 
 const projectFields =
-  "id, title, description, project_type, tools, dashboard_path, github_url, live_url, is_published, display_order";
+  "id, title, description, project_type, tools, dashboard_path, cover_image_path, github_url, live_url, is_published, display_order, project_assets(id, storage_path, file_name, content_type, display_order)";
 
 type ProjectForm = {
   title: string;
@@ -58,6 +68,13 @@ export default function ProjectAdmin() {
   const [dashboardFile, setDashboardFile] = useState<File | null>(null);
   const [existingDashboard, setExistingDashboard] = useState<string | null>(null);
   const [removeDashboard, setRemoveDashboard] = useState(false);
+  const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
+  const [existingCoverImage, setExistingCoverImage] = useState<string | null>(null);
+  const [removeCoverImage, setRemoveCoverImage] = useState(false);
+  const [assetFiles, setAssetFiles] = useState<File[]>([]);
+  const [existingAssets, setExistingAssets] = useState<ProjectAsset[]>([]);
+  const [removedAssetIds, setRemovedAssetIds] = useState<string[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -183,6 +200,13 @@ export default function ProjectAdmin() {
     setDashboardFile(null);
     setExistingDashboard(null);
     setRemoveDashboard(false);
+    setCoverImageFile(null);
+    setExistingCoverImage(null);
+    setRemoveCoverImage(false);
+    setAssetFiles([]);
+    setExistingAssets([]);
+    setRemovedAssetIds([]);
+    setUploadProgress(null);
     setFormError(null);
     setNotice(null);
   }
@@ -202,6 +226,13 @@ export default function ProjectAdmin() {
     setDashboardFile(null);
     setExistingDashboard(project.dashboard_path);
     setRemoveDashboard(false);
+    setCoverImageFile(null);
+    setExistingCoverImage(project.cover_image_path);
+    setRemoveCoverImage(false);
+    setAssetFiles([]);
+    setExistingAssets(project.project_assets ?? []);
+    setRemovedAssetIds([]);
+    setUploadProgress(null);
     setFormError(null);
     setNotice(null);
   }
@@ -217,9 +248,44 @@ export default function ProjectAdmin() {
       return;
     }
 
+    const coverContentType = coverImageFile
+      ? getProjectImageContentType(coverImageFile.name)
+      : null;
+    if (coverImageFile && !coverContentType) {
+      setFormError("Cover images must be JPG, PNG, or WebP files.");
+      return;
+    }
+
+    if (coverImageFile && coverContentType) {
+      if (coverImageFile.size > MAX_PROJECT_UPLOAD_BYTES) {
+        setFormError("Cover images must be 150 MB or smaller.");
+        return;
+      }
+      if (
+        (coverImageFile.type && coverImageFile.type !== coverContentType) ||
+        !(await hasValidProjectImageSignature(coverImageFile, coverContentType))
+      ) {
+        setFormError("The selected cover image is not a valid JPG, PNG, or WebP file.");
+        return;
+      }
+    }
+
+    for (const file of assetFiles) {
+      if (!getProjectFileContentType(file.name)) {
+        setFormError(
+          `${file.name} is not a supported file. Choose ZIP, code, notebook, data, or document files.`,
+        );
+        return;
+      }
+      if (file.size > MAX_PROJECT_UPLOAD_BYTES) {
+        setFormError(`${file.name} is larger than the 150 MB per-file limit.`);
+        return;
+      }
+    }
+
     if (dashboardFile) {
-      if (dashboardFile.type !== "application/pdf" || !dashboardFile.name.toLowerCase().endsWith(".pdf")) {
-        setFormError("Dashboard uploads must be PDF files, not image screenshots.");
+      if (getProjectFileContentType(dashboardFile.name) !== "application/pdf") {
+        setFormError("Dashboard reports must be PDF files. Use the cover image field for screenshots.");
         return;
       }
 
@@ -231,35 +297,122 @@ export default function ProjectAdmin() {
         return;
       }
 
-      if (dashboardFile.size > 50 * 1024 * 1024) {
-        setFormError("Dashboard PDFs must be 50 MB or smaller.");
+      if (dashboardFile.size > MAX_PROJECT_UPLOAD_BYTES) {
+        setFormError("Dashboard PDFs must be 150 MB or smaller.");
         return;
       }
     }
 
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (!supabaseUrl) {
+      setFormError("Supabase is not configured for project uploads.");
+      return;
+    }
+    const client = supabase;
+    const currentSession = session;
+    const projectUrl = supabaseUrl;
+
     setSaving(true);
     setFormError(null);
     setNotice(null);
+    setUploadProgress(null);
 
     let dashboardPath = removeDashboard ? null : existingDashboard;
-    let uploadedPath: string | null = null;
+    let coverImagePath = removeCoverImage ? null : existingCoverImage;
+    const uploadedObjects: { bucket: string; path: string }[] = [];
+    const uploadedAssets: {
+      file: File;
+      path: string;
+      contentType: string;
+    }[] = [];
+    const uploadFiles = [
+      ...(dashboardFile ? [dashboardFile] : []),
+      ...(coverImageFile ? [coverImageFile] : []),
+      ...assetFiles,
+    ];
+    let completedUploads = 0;
 
-    if (dashboardFile) {
-      uploadedPath = `${session.user.id}/${crypto.randomUUID()}.pdf`;
-      const { error: uploadError } = await supabase.storage
-        .from("project-dashboards")
-        .upload(uploadedPath, dashboardFile, {
-          contentType: "application/pdf",
-          upsert: false,
-        });
-
-      if (uploadError) {
-        setFormError(`Could not upload dashboard PDF: ${uploadError.message}`);
-        setSaving(false);
-        return;
+    async function removeUploadedObjects(
+      objects: { bucket: string; path: string }[],
+    ): Promise<string[]> {
+      const failures: string[] = [];
+      const byBucket = new Map<string, string[]>();
+      for (const object of objects) {
+        byBucket.set(object.bucket, [
+          ...(byBucket.get(object.bucket) ?? []),
+          object.path,
+        ]);
       }
+      for (const [bucket, paths] of byBucket) {
+        const { error } = await client.storage.from(bucket).remove(paths);
+        if (error) {
+          failures.push(`${bucket}: ${error.message}`);
+        }
+      }
+      return failures;
+    }
 
-      dashboardPath = uploadedPath;
+    async function uploadFile(
+      file: File,
+      bucket: string,
+      contentType: string,
+    ): Promise<string> {
+      const path = getProjectStoragePath(currentSession.user.id, file.name);
+      await uploadProjectObject({
+        supabaseUrl: projectUrl,
+        accessToken: currentSession.access_token,
+        bucketName: bucket,
+        objectPath: path,
+        file,
+        contentType,
+        onProgress(percentage) {
+          setUploadProgress(
+            Math.round(((completedUploads + percentage / 100) / uploadFiles.length) * 100),
+          );
+        },
+      });
+      uploadedObjects.push({ bucket, path });
+      completedUploads += 1;
+      return path;
+    }
+
+    try {
+      if (dashboardFile) {
+        dashboardPath = await uploadFile(
+          dashboardFile,
+          "project-dashboards",
+          "application/pdf",
+        );
+      }
+      if (coverImageFile && coverContentType) {
+        coverImagePath = await uploadFile(
+          coverImageFile,
+          "project-assets",
+          coverContentType,
+        );
+      }
+      for (const file of assetFiles) {
+        const contentType = getProjectFileContentType(file.name);
+        if (!contentType) {
+          throw new Error(`Unsupported file type: ${file.name}`);
+        }
+        const path = await uploadFile(file, "project-assets", contentType);
+        uploadedAssets.push({ file, path, contentType });
+      }
+    } catch (error) {
+      const cleanupFailures = await removeUploadedObjects(uploadedObjects);
+      const message =
+        error instanceof Error ? error.message : "An unknown upload error occurred.";
+      setFormError(
+        `Could not upload project files: ${message}${
+          cleanupFailures.length
+            ? ` Uploaded files also could not be cleaned up: ${cleanupFailures.join("; ")}`
+            : ""
+        }`,
+      );
+      setUploadProgress(null);
+      setSaving(false);
+      return;
     }
 
     const payload = {
@@ -268,6 +421,7 @@ export default function ProjectAdmin() {
       project_type: form.project_type,
       tools: form.tools.split(",").map((tool) => tool.trim()).filter(Boolean),
       dashboard_path: dashboardPath,
+      cover_image_path: coverImagePath,
       github_url: form.github_url.trim() || null,
       live_url: form.live_url.trim() || null,
       is_published: form.is_published,
@@ -275,41 +429,151 @@ export default function ProjectAdmin() {
     };
 
     const result = editingId
-      ? await supabase
+      ? await client
           .from("projects")
           .update(payload)
           .eq("id", editingId)
           .select(projectFields)
           .single()
-      : await supabase
+      : await client
           .from("projects")
           .insert(payload)
           .select(projectFields)
           .single();
 
     if (result.error) {
-      if (uploadedPath) {
-        const { error: cleanupError } = await supabase.storage
-          .from("project-dashboards")
-          .remove([uploadedPath]);
-        if (cleanupError) {
-          setFormError(
-            `Could not save project: ${result.error.message}. The new PDF also could not be removed: ${cleanupError.message}`,
-          );
-          setSaving(false);
-          return;
-        }
-      }
-      setFormError(`Could not save project: ${result.error.message}`);
+      const cleanupFailures = await removeUploadedObjects(uploadedObjects);
+      setFormError(
+        `Could not save project: ${result.error.message}${
+          cleanupFailures.length
+            ? ` Uploaded files also could not be cleaned up: ${cleanupFailures.join("; ")}`
+            : ""
+        }`,
+      );
+      setUploadProgress(null);
       setSaving(false);
       return;
     }
 
     const saved = result.data as Project;
+    const retainedAssets = existingAssets.filter(
+      (asset) => !removedAssetIds.includes(asset.id),
+    );
+    let addedAssets: ProjectAsset[] = [];
+
+    if (uploadedAssets.length > 0) {
+      const { data, error } = await client
+        .from("project_assets")
+        .insert(
+          uploadedAssets.map((asset, index) => ({
+            project_id: saved.id,
+            storage_path: asset.path,
+            file_name: asset.file.name,
+            content_type: asset.contentType,
+            display_order: retainedAssets.length + index,
+          })),
+        )
+        .select("id, storage_path, file_name, content_type, display_order");
+
+      if (error || !data) {
+        const cleanupFailures = await removeUploadedObjects(
+          uploadedAssets.map((asset) => ({
+            bucket: "project-assets",
+            path: asset.path,
+          })),
+        );
+        const currentProject = {
+          ...saved,
+          dashboard_path: dashboardPath,
+          cover_image_path: coverImagePath,
+          project_assets: existingAssets,
+        };
+        setProjects((current) =>
+          editingId
+            ? current.map((project) =>
+                project.id === saved.id ? currentProject : project,
+              )
+            : [...current, currentProject],
+        );
+        setEditingId(saved.id);
+        setExistingDashboard(dashboardPath);
+        setDashboardFile(null);
+        setExistingCoverImage(coverImagePath);
+        setCoverImageFile(null);
+        setExistingAssets(existingAssets);
+        setRemoveDashboard(false);
+        setRemoveCoverImage(false);
+        setUploadProgress(null);
+        setFormError(
+          `Project details were saved, but its downloadable files could not be linked: ${
+            error?.message ?? "No file records were returned."
+          }${
+            cleanupFailures.length
+              ? ` The uploaded files also could not be cleaned up: ${cleanupFailures.join("; ")}`
+              : ""
+          }`,
+        );
+        setSaving(false);
+        return;
+      }
+
+      addedAssets = data as ProjectAsset[];
+    }
+
+    const assetsToRemove = existingAssets.filter((asset) =>
+      removedAssetIds.includes(asset.id),
+    );
+    if (assetsToRemove.length > 0) {
+      const { error } = await client
+        .from("project_assets")
+        .delete()
+        .in(
+          "id",
+          assetsToRemove.map((asset) => asset.id),
+        );
+      if (error) {
+        const currentProject = {
+          ...saved,
+          dashboard_path: dashboardPath,
+          cover_image_path: coverImagePath,
+          project_assets: [...existingAssets, ...addedAssets],
+        };
+        setProjects((current) =>
+          editingId
+            ? current.map((project) =>
+                project.id === saved.id ? currentProject : project,
+              )
+            : [...current, currentProject],
+        );
+        setEditingId(saved.id);
+        setExistingDashboard(dashboardPath);
+        setDashboardFile(null);
+        setExistingCoverImage(coverImagePath);
+        setCoverImageFile(null);
+        setAssetFiles([]);
+        setExistingAssets([...existingAssets, ...addedAssets]);
+        setRemoveDashboard(false);
+        setRemoveCoverImage(false);
+        setUploadProgress(null);
+        setFormError(`Project saved, but old downloadable files could not be removed: ${error.message}`);
+        setSaving(false);
+        return;
+      }
+    }
+
+    const savedAssets = [...retainedAssets, ...addedAssets];
+    const savedProject: Project = {
+      ...saved,
+      dashboard_path: dashboardPath,
+      cover_image_path: coverImagePath,
+      project_assets: savedAssets,
+    };
     setProjects((current) =>
       editingId
-        ? current.map((project) => (project.id === saved.id ? saved : project))
-        : [...current, saved].sort(
+        ? current.map((project) =>
+            project.id === savedProject.id ? savedProject : project,
+          )
+        : [...current, savedProject].sort(
             (a, b) =>
               a.display_order - b.display_order ||
               a.title.localeCompare(b.title),
@@ -317,26 +581,60 @@ export default function ProjectAdmin() {
     );
 
     const oldDashboard = existingDashboard;
+    const oldCoverImage = existingCoverImage;
+    const cleanupFailures: string[] = [];
     if (oldDashboard && oldDashboard !== dashboardPath) {
-      const { error: removeError } = await supabase.storage
+      const { error } = await supabase.storage
         .from("project-dashboards")
         .remove([oldDashboard]);
-      if (removeError) {
-        setFormError(
-          `Project saved, but the replaced dashboard PDF could not be removed: ${removeError.message}`,
-        );
-        setSaving(false);
-        setNotice("Project saved.");
-        return;
+      if (error) {
+        cleanupFailures.push(`dashboard PDF: ${error.message}`);
       }
+    }
+    const oldAssetPaths = assetsToRemove.map((asset) => asset.storage_path);
+    if (oldAssetPaths.length > 0) {
+      const { error } = await supabase.storage
+        .from("project-assets")
+        .remove(oldAssetPaths);
+      if (error) {
+        cleanupFailures.push(`project files: ${error.message}`);
+      }
+    }
+    if (oldCoverImage && oldCoverImage !== coverImagePath) {
+      const { error } = await supabase.storage
+        .from("project-assets")
+        .remove([oldCoverImage]);
+      if (error) {
+        cleanupFailures.push(`cover image: ${error.message}`);
+      }
+    }
+
+    setExistingDashboard(dashboardPath);
+    setExistingCoverImage(coverImagePath);
+    setDashboardFile(null);
+    setCoverImageFile(null);
+    setAssetFiles([]);
+    setExistingAssets(savedAssets);
+    setRemovedAssetIds([]);
+    setRemoveDashboard(false);
+    setRemoveCoverImage(false);
+    setUploadProgress(null);
+    if (cleanupFailures.length > 0) {
+      setEditingId(savedProject.id);
+      setFormError(
+        `Project saved, but some replaced files could not be removed: ${cleanupFailures.join("; ")}`,
+      );
+      setNotice("Project saved.");
+      setSaving(false);
+      return;
     }
 
     setNotice(editingId ? "Project updated." : "Project added.");
     setForm(emptyForm);
-    setDashboardFile(null);
-    setExistingDashboard(null);
-    setRemoveDashboard(false);
     setEditingId(null);
+    setExistingDashboard(null);
+    setExistingCoverImage(null);
+    setExistingAssets([]);
     setSaving(false);
   }
 
@@ -359,18 +657,35 @@ export default function ProjectAdmin() {
       resetForm();
     }
 
+    const cleanupFailures: string[] = [];
     if (project.dashboard_path) {
       const { error: removeError } = await supabase.storage
         .from("project-dashboards")
         .remove([project.dashboard_path]);
       if (removeError) {
-        setFormError(
-          `Project deleted, but its dashboard PDF could not be removed: ${removeError.message}`,
-        );
-        return;
+        cleanupFailures.push(`dashboard PDF: ${removeError.message}`);
       }
     }
 
+    const projectAssetPaths = [
+      ...(project.cover_image_path ? [project.cover_image_path] : []),
+      ...(project.project_assets ?? []).map((asset) => asset.storage_path),
+    ];
+    if (projectAssetPaths.length > 0) {
+      const { error: removeError } = await supabase.storage
+        .from("project-assets")
+        .remove(projectAssetPaths);
+      if (removeError) {
+        cleanupFailures.push(`project files: ${removeError.message}`);
+      }
+    }
+
+    if (cleanupFailures.length > 0) {
+      setFormError(
+        `Project deleted, but some uploaded files could not be removed: ${cleanupFailures.join("; ")}`,
+      );
+      return;
+    }
     setNotice("Project deleted.");
   }
 
@@ -495,7 +810,46 @@ export default function ProjectAdmin() {
           />
         </label>
         <label>
-          Dashboard report (PDF only, up to 50 MB; no screenshots)
+          Project cover image (JPG, PNG, or WebP; up to 150 MB)
+          <input
+            type="file"
+            accept={PROJECT_IMAGE_ACCEPT}
+            onChange={(event) =>
+              setCoverImageFile(event.target.files?.[0] ?? null)
+            }
+          />
+        </label>
+        {existingCoverImage && !removeCoverImage && !coverImageFile && (
+          <div className="admin-current-file">
+            <a
+              href={
+                supabase.storage
+                  .from("project-assets")
+                  .getPublicUrl(existingCoverImage).data.publicUrl
+              }
+              target="_blank"
+              rel="noreferrer"
+            >
+              View current cover image
+            </a>
+            <button type="button" onClick={() => setRemoveCoverImage(true)}>
+              Remove image
+            </button>
+          </div>
+        )}
+        {coverImageFile && (
+          <p className="admin-file-name">Selected image: {coverImageFile.name}</p>
+        )}
+        {removeCoverImage && (
+          <p className="admin-file-name">
+            The current cover image will be removed when you save.
+            <button type="button" onClick={() => setRemoveCoverImage(false)}>
+              Undo
+            </button>
+          </p>
+        )}
+        <label>
+          Dashboard report (PDF only, up to 150 MB)
           <input
             type="file"
             accept="application/pdf,.pdf"
@@ -529,6 +883,55 @@ export default function ProjectAdmin() {
             <button type="button" onClick={() => setRemoveDashboard(false)}>Undo</button>
           </p>
         )}
+        <label>
+          Project files (ZIP, code, notebooks, spreadsheets, and documents; up to 150 MB each)
+          <input
+            type="file"
+            accept={PROJECT_FILE_ACCEPT}
+            multiple
+            onChange={(event) =>
+              setAssetFiles(Array.from(event.target.files ?? []))
+            }
+          />
+        </label>
+        <p className="admin-upload-note">
+          Files attached to published projects are public and downloadable by visitors.
+          Supabase may require a plan with a 150 MB upload limit.
+        </p>
+        {existingAssets.map((asset) => {
+          const removed = removedAssetIds.includes(asset.id);
+          const publicUrl = supabase.storage
+            .from("project-assets")
+            .getPublicUrl(asset.storage_path).data.publicUrl;
+          return (
+            <div className="admin-current-file" key={asset.id}>
+              <a
+                href={`${publicUrl}?download=${encodeURIComponent(asset.file_name)}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {asset.file_name}
+              </a>
+              <button
+                type="button"
+                onClick={() =>
+                  setRemovedAssetIds((current) =>
+                    removed
+                      ? current.filter((id) => id !== asset.id)
+                      : [...current, asset.id],
+                  )
+                }
+              >
+                {removed ? "Keep file" : "Remove file"}
+              </button>
+            </div>
+          );
+        })}
+        {assetFiles.map((file, index) => (
+          <p className="admin-file-name" key={`${file.name}-${file.lastModified}-${index}`}>
+            Selected: {file.name}
+          </p>
+        ))}
         <label>
           GitHub repository URL
           <input
@@ -571,6 +974,11 @@ export default function ProjectAdmin() {
         </label>
         {formError && <p className="admin-error" role="alert">{formError}</p>}
         {notice && <p className="admin-success" role="status">{notice}</p>}
+        {saving && uploadProgress !== null && (
+          <p className="admin-file-name" role="status">
+            Uploading project files: {uploadProgress}%
+          </p>
+        )}
         <div className="admin-form-actions">
           <button className="button button-dark" type="submit" disabled={saving}>
             {saving ? "Saving…" : editingId ? "Save changes" : "Add project"}
