@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "../supabase";
-import { formatExperienceDate, formatExperienceDuration } from "./experience-utils";
+import {
+  formatExperienceDate,
+  formatExperienceDuration,
+  formatTotalExperienceDuration,
+} from "./experience-utils";
 import type { Experience } from "./types";
 
 export default function ExperienceList() {
@@ -81,28 +85,36 @@ export default function ExperienceList() {
     );
   }
 
+  const totalExperience = formatTotalExperienceDuration(experiences);
+
   return (
-    <div className="experience-list">
-      {experiences.map((experience) => (
-        <article className="experience-card" key={experience.id}>
-          <div className="experience-card-duration">
-            <span>{formatExperienceDuration(experience)}</span>
-            <small>
-              {formatExperienceDate(experience.start_date)} –{" "}
-              {experience.is_current || !experience.end_date
-                ? "Present"
-                : formatExperienceDate(experience.end_date)}
-            </small>
-          </div>
-          <div className="experience-card-content">
-            {experience.organization && (
-              <span className="eyebrow">{experience.organization}</span>
-            )}
-            <h2>{experience.title}</h2>
-            <p>{experience.description}</p>
-          </div>
-        </article>
-      ))}
-    </div>
+    <>
+      <div className="experience-total">
+        <span className="eyebrow">TOTAL PROFESSIONAL EXPERIENCE</span>
+        <strong>{totalExperience}</strong>
+      </div>
+      <div className="experience-list">
+        {experiences.map((experience) => (
+          <article className="experience-card" key={experience.id}>
+            <div className="experience-card-duration">
+              <span>{formatExperienceDuration(experience)}</span>
+              <small>
+                {formatExperienceDate(experience.start_date)} –{" "}
+                {experience.is_current || !experience.end_date
+                  ? "Present"
+                  : formatExperienceDate(experience.end_date)}
+              </small>
+            </div>
+            <div className="experience-card-content">
+              {experience.organization && (
+                <span className="eyebrow">{experience.organization}</span>
+              )}
+              <h2>{experience.title}</h2>
+              <p>{experience.description}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+    </>
   );
 }
