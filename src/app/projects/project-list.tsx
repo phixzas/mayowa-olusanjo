@@ -4,9 +4,29 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { createSupabaseBrowserClient } from "../supabase";
 import { DEFAULT_PROJECT_LINKEDIN_URL, type Project } from "./types";
+import ProjectCodeViewer from "./project-code-viewer";
 
 const projectFields =
   "id, title, description, project_type, tools, dashboard_path, cover_image_path, github_url, live_url, linkedin_url, is_published, display_order, project_assets(id, storage_path, file_name, content_type, display_order)";
+
+const viewableCodeExtensions = new Set([
+  "py",
+  "ipynb",
+  "js",
+  "jsx",
+  "ts",
+  "tsx",
+  "html",
+  "css",
+  "sql",
+  "r",
+  "rmd",
+]);
+
+function isViewableCodeFile(fileName: string): boolean {
+  const extension = fileName.split(".").pop()?.toLowerCase();
+  return extension ? viewableCodeExtensions.has(extension) : false;
+}
 
 export default function ProjectList({ limit }: { limit?: number }) {
   const [supabase] = useState(() => createSupabaseBrowserClient());
@@ -121,6 +141,16 @@ export default function ProjectList({ limit }: { limit?: number }) {
               </div>
             )}
             <div className="managed-project-content">
+              {project.live_url && (
+                <a
+                  className="button button-dark project-live-link"
+                  href={project.live_url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Open live app <span aria-hidden="true">↗</span>
+                </a>
+              )}
               <div className="project-meta">
                 <span>{project.project_type === "data_analysis" ? "DATA ANALYSIS" : "DATA SCIENCE"}</span>
                 {project.dashboard_path && <span>PDF DASHBOARD</span>}
@@ -143,6 +173,17 @@ export default function ProjectList({ limit }: { limit?: number }) {
                   const { data: file } = supabase.storage
                     .from("project-assets")
                     .getPublicUrl(asset.storage_path);
+                  if (isViewableCodeFile(asset.file_name)) {
+                    return (
+                      <ProjectCodeViewer
+                        key={asset.id}
+                        assetId={asset.id}
+                        fileName={asset.file_name}
+                        fileUrl={file.publicUrl}
+                      />
+                    );
+                  }
+
                   return (
                     <a
                       key={asset.id}
@@ -155,11 +196,6 @@ export default function ProjectList({ limit }: { limit?: number }) {
                 {project.github_url && (
                   <a href={project.github_url} target="_blank" rel="noreferrer">
                     View code on GitHub <span aria-hidden="true">↗</span>
-                  </a>
-                )}
-                {project.live_url && (
-                  <a href={project.live_url} target="_blank" rel="noreferrer">
-                    Open live app <span aria-hidden="true">↗</span>
                   </a>
                 )}
                 <a href={linkedinUrl} target="_blank" rel="noreferrer">

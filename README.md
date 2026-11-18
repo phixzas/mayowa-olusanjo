@@ -67,8 +67,8 @@ experience page calculates the duration for each role from its dates.
 Row-level security limits edits to user IDs explicitly added to
 `experience_admins`; visitors can only read published entries.
 The same admin account can manage projects at `/admin/projects`. Project cover
-images support JPG, PNG, and WebP. Downloadable project files support ZIP,
-common code and notebook formats, CSV/Excel, PDF, and common text documents.
+images support JPG, PNG, and WebP. Uploaded code and notebook files are shown in
+a safe in-page viewer; ZIP, CSV/Excel, PDF, and document files can be downloaded.
 Uploads are limited to 150 MB per file and are public on published projects;
 only authorized admins can upload or remove them. Supabase Free has a 50 MB
 global file-size limit, so 150 MB uploads require a plan that supports that

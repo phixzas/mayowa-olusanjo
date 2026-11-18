@@ -908,7 +908,7 @@ export default function ProjectAdmin() {
           />
         </label>
         <p className="admin-upload-note">
-          Files attached to published projects are public and downloadable by visitors.
+          Code files are shown in a viewer; other attached files are downloadable by visitors.
           Supabase may require a plan with a 150 MB upload limit.
         </p>
         {existingAssets.map((asset) => {

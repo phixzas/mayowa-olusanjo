@@ -582,6 +582,13 @@ a {
   padding: 20px;
 }
 
+.project-live-link {
+  min-height: 54px;
+  margin-bottom: 14px;
+  padding-inline: 23px;
+  font-size: 15px;
+}
+
 .managed-project-content h2 {
   margin: 10px 0 8px;
   font-size: 19px;
@@ -619,6 +626,49 @@ a {
 .admin-current-file a:hover {
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+.project-code-viewer {
+  flex: 1 1 100%;
+}
+
+.project-code-view-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #567b36;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.project-code-view-button:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.project-code-preview {
+  max-height: 420px;
+  margin-top: 12px;
+  padding: 14px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  background: #f5f6f2;
+  color: #273126;
+}
+
+.project-code-preview p {
+  margin: 0 0 10px;
+  font-size: 11px;
+}
+
+.project-code-preview pre {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.55;
+  white-space: pre;
 }
 
 .projects-page {

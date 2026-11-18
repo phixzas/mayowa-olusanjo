@@ -23,8 +23,8 @@ export default function ProjectsPage() {
             <h1>Projects built<br />to be explored.</h1>
           </div>
           <p>
-            Explore project images, dashboard PDFs, downloadable source and data
-            files, live apps, and related LinkedIn posts.
+            Explore project images, dashboard PDFs, viewable code, downloadable
+            data files, live apps, and related LinkedIn posts.
           </p>
         </div>
         <ProjectList />
