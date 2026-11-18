@@ -17,7 +17,7 @@ import {
 } from "./project-uploads";
 
 const projectFields =
-  "id, title, description, project_type, tools, dashboard_path, cover_image_path, github_url, live_url, is_published, display_order, project_assets(id, storage_path, file_name, content_type, display_order)";
+  "id, title, description, project_type, tools, dashboard_path, cover_image_path, github_url, live_url, linkedin_url, is_published, display_order, project_assets(id, storage_path, file_name, content_type, display_order)";
 
 type ProjectForm = {
   title: string;
@@ -26,6 +26,7 @@ type ProjectForm = {
   tools: string;
   github_url: string;
   live_url: string;
+  linkedin_url: string;
   is_published: boolean;
   display_order: string;
 };
@@ -37,6 +38,7 @@ const emptyForm: ProjectForm = {
   tools: "",
   github_url: "",
   live_url: "",
+  linkedin_url: "",
   is_published: true,
   display_order: "0",
 };
@@ -220,6 +222,7 @@ export default function ProjectAdmin() {
       tools: project.tools.join(", "),
       github_url: project.github_url ?? "",
       live_url: project.live_url ?? "",
+      linkedin_url: project.linkedin_url ?? "",
       is_published: project.is_published,
       display_order: String(project.display_order),
     });
@@ -243,7 +246,11 @@ export default function ProjectAdmin() {
       return;
     }
 
-    if (!isValidOptionalUrl(form.github_url) || !isValidOptionalUrl(form.live_url)) {
+    if (
+      !isValidOptionalUrl(form.github_url) ||
+      !isValidOptionalUrl(form.live_url) ||
+      !isValidOptionalUrl(form.linkedin_url)
+    ) {
       setFormError("Links must be valid HTTP or HTTPS URLs.");
       return;
     }
@@ -424,6 +431,7 @@ export default function ProjectAdmin() {
       cover_image_path: coverImagePath,
       github_url: form.github_url.trim() || null,
       live_url: form.live_url.trim() || null,
+      linkedin_url: form.linkedin_url.trim() || null,
       is_published: form.is_published,
       display_order: Number(form.display_order) || 0,
     };
@@ -948,6 +956,17 @@ export default function ProjectAdmin() {
             value={form.live_url}
             onChange={(event) => setForm({ ...form, live_url: event.target.value })}
             placeholder="https://your-app.streamlit.app"
+          />
+        </label>
+        <label>
+          LinkedIn project, post, or profile URL
+          <input
+            type="url"
+            value={form.linkedin_url}
+            onChange={(event) =>
+              setForm({ ...form, linkedin_url: event.target.value })
+            }
+            placeholder="https://www.linkedin.com/posts/..."
           />
         </label>
         <label>

@@ -6,7 +6,7 @@ import ProjectList from "./project-list";
 export const metadata: Metadata = {
   title: "Projects | Mayowa Philips Olusanjo",
   description:
-    "Data analysis dashboards, data-science projects, GitHub code, and live applications by Mayowa Philips Olusanjo.",
+    "Data analysis dashboards, data-science projects, GitHub code, LinkedIn posts, and live applications by Mayowa Philips Olusanjo.",
 };
 
 export default function ProjectsPage() {
@@ -24,7 +24,7 @@ export default function ProjectsPage() {
           </div>
           <p>
             Explore project images, dashboard PDFs, downloadable source and data
-            files, and live apps.
+            files, live apps, and related LinkedIn posts.
           </p>
         </div>
         <ProjectList />

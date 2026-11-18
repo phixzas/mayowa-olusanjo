@@ -19,6 +19,7 @@ export type Project = {
   project_assets: ProjectAsset[];
   github_url: string | null;
   live_url: string | null;
+  linkedin_url: string | null;
   is_published: boolean;
   display_order: number;
 };

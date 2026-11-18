@@ -6,7 +6,7 @@ import { createSupabaseBrowserClient } from "../supabase";
 import type { Project } from "./types";
 
 const projectFields =
-  "id, title, description, project_type, tools, dashboard_path, cover_image_path, github_url, live_url, is_published, display_order, project_assets(id, storage_path, file_name, content_type, display_order)";
+  "id, title, description, project_type, tools, dashboard_path, cover_image_path, github_url, live_url, linkedin_url, is_published, display_order, project_assets(id, storage_path, file_name, content_type, display_order)";
 
 export default function ProjectList({ limit }: { limit?: number }) {
   const [supabase] = useState(() => createSupabaseBrowserClient());
@@ -158,6 +158,11 @@ export default function ProjectList({ limit }: { limit?: number }) {
                 {project.live_url && (
                   <a href={project.live_url} target="_blank" rel="noreferrer">
                     Open live app <span aria-hidden="true">↗</span>
+                  </a>
+                )}
+                {project.linkedin_url && (
+                  <a href={project.linkedin_url} target="_blank" rel="noreferrer">
+                    View on LinkedIn <span aria-hidden="true">↗</span>
                   </a>
                 )}
               </div>
