@@ -4,7 +4,12 @@ import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseBrowserClient } from "../../supabase";
-import type { Project, ProjectAsset, ProjectType } from "../../projects/types";
+import {
+  DEFAULT_PROJECT_LINKEDIN_URL,
+  type Project,
+  type ProjectAsset,
+  type ProjectType,
+} from "../../projects/types";
 import {
   getProjectFileContentType,
   getProjectImageContentType,
@@ -38,7 +43,7 @@ const emptyForm: ProjectForm = {
   tools: "",
   github_url: "",
   live_url: "",
-  linkedin_url: "",
+  linkedin_url: DEFAULT_PROJECT_LINKEDIN_URL,
   is_published: true,
   display_order: "0",
 };
@@ -222,7 +227,7 @@ export default function ProjectAdmin() {
       tools: project.tools.join(", "),
       github_url: project.github_url ?? "",
       live_url: project.live_url ?? "",
-      linkedin_url: project.linkedin_url ?? "",
+      linkedin_url: project.linkedin_url ?? DEFAULT_PROJECT_LINKEDIN_URL,
       is_published: project.is_published,
       display_order: String(project.display_order),
     });
@@ -431,7 +436,7 @@ export default function ProjectAdmin() {
       cover_image_path: coverImagePath,
       github_url: form.github_url.trim() || null,
       live_url: form.live_url.trim() || null,
-      linkedin_url: form.linkedin_url.trim() || null,
+      linkedin_url: form.linkedin_url.trim() || DEFAULT_PROJECT_LINKEDIN_URL,
       is_published: form.is_published,
       display_order: Number(form.display_order) || 0,
     };
@@ -959,7 +964,7 @@ export default function ProjectAdmin() {
           />
         </label>
         <label>
-          LinkedIn project, post, or profile URL
+          LinkedIn link (defaults to your profile)
           <input
             type="url"
             value={form.linkedin_url}

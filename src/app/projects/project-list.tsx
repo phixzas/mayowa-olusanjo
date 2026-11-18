@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { createSupabaseBrowserClient } from "../supabase";
-import type { Project } from "./types";
+import { DEFAULT_PROJECT_LINKEDIN_URL, type Project } from "./types";
 
 const projectFields =
   "id, title, description, project_type, tools, dashboard_path, cover_image_path, github_url, live_url, linkedin_url, is_published, display_order, project_assets(id, storage_path, file_name, content_type, display_order)";
@@ -89,6 +89,8 @@ export default function ProjectList({ limit }: { limit?: number }) {
               .from("project-assets")
               .getPublicUrl(project.cover_image_path)
           : { data: { publicUrl: null } };
+        const linkedinUrl =
+          project.linkedin_url ?? DEFAULT_PROJECT_LINKEDIN_URL;
 
         return (
           <article className="managed-project-card" key={project.id}>
@@ -160,11 +162,9 @@ export default function ProjectList({ limit }: { limit?: number }) {
                     Open live app <span aria-hidden="true">↗</span>
                   </a>
                 )}
-                {project.linkedin_url && (
-                  <a href={project.linkedin_url} target="_blank" rel="noreferrer">
-                    View on LinkedIn <span aria-hidden="true">↗</span>
-                  </a>
-                )}
+                <a href={linkedinUrl} target="_blank" rel="noreferrer">
+                  View on LinkedIn <span aria-hidden="true">↗</span>
+                </a>
               </div>
             </div>
           </article>

@@ -1,5 +1,8 @@
 export type ProjectType = "data_analysis" | "data_science";
 
+export const DEFAULT_PROJECT_LINKEDIN_URL =
+  "https://www.linkedin.com/in/mayowa-philips-olusanjo-982663152";
+
 export type ProjectAsset = {
   id: string;
   storage_path: string;

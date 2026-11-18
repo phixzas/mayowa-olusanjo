@@ -50,6 +50,7 @@ experience page calculates the duration for each role from its dates.
    - `supabase/migrations/202611180005_cv_documents.sql`
    - `supabase/migrations/202611180006_project_uploads.sql`
    - `supabase/migrations/202611180007_project_linkedin_url.sql`
+   - `supabase/migrations/202611180008_default_project_linkedin_url.sql`
 2. Copy `.env.example` to `.env.local` and set `NEXT_PUBLIC_SUPABASE_URL` and
    `NEXT_PUBLIC_SUPABASE_ANON_KEY` using your project URL and public anon/publishable key.
    Never put a Supabase service-role key in the Next.js app.
@@ -74,7 +75,8 @@ global file-size limit, so 150 MB uploads require a plan that supports that
 limit and a matching **Storage → Global file size limit** setting. The project
 dashboard PDF remains separately viewable on the project card. Add GitHub,
 LinkedIn, and live app/dashboard URLs for source repositories, related posts,
-and interactive demos.
+and interactive demos. Existing and new projects default to the portfolio's
+LinkedIn profile link; you can replace it with a project-specific LinkedIn URL.
 The same admin account can manage skill categories at `/admin/skills`. Enter one
 tool per line; published categories appear on both the homepage and About page.
 The same admin account can upload or replace the profile photo at `/admin/profile`.
