@@ -16,6 +16,18 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+## Deploy to GitHub Pages
+
+The `main` branch deploys automatically to
+`https://phixzas.github.io/mayowa-olusanjo/` using a static Next.js export.
+In the GitHub repository, open **Settings → Pages** and set **Build and
+deployment → Source** to **GitHub Actions**. The workflow builds with the
+public Supabase URL and publishable key from `.env.example`; do not add a
+service-role key there.
+
+The admin pages remain browser-based and use Supabase. Sign in at
+`https://phixzas.github.io/mayowa-olusanjo/admin/experience/` after deployment.
+
 ## Personalize the portfolio
 
 - Update project descriptions, tools, and modeling details in `src/app/portfolio-data.ts`.
