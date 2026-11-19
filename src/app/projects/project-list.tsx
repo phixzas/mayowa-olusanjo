@@ -46,6 +46,8 @@ export default function ProjectList({ limit }: { limit?: number }) {
         .from("projects")
         .select(projectFields)
         .eq("is_published", true)
+        // Reverse text order puts data_science before data_analysis.
+        .order("project_type", { ascending: false })
         .order("display_order", { ascending: true })
         .order("created_at", { ascending: false });
 
